@@ -52,7 +52,7 @@ else:
     question = st.text_area(
         "Now ask a question about the selected projects",
         placeholder="Can you give me a short summary?",
-        disabled=not (len(options)<1),
+        disabled=(len(options)<1),
     )
 
     if options and question:
