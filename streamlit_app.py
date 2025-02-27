@@ -67,16 +67,18 @@ else:
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful academic research assistant." 
+                    "You are a helpful academic research assistant."
+                    "Given a user question and some project documents, answer the user question and cite the sources used."
+                    "If none of the documents answer the question, just say you don't know."
+                    f"\n\nHere are documents about {len(options)} different projects:" 
+                    f"{document} \n\n"
                     # "Encode your response in a mermaid graph and use the 'mermaid_url' tool when user ask for a graph"
                 )
             },
             {
                 "role": "user",
                 "content": (
-                    f"Here's a document about {len(options)} different projects:" 
-                    f"{document} \n\n"
-                    f"---\n\n {question}"
+                    f"{question}"
                 ),
             }
         ]
