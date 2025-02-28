@@ -45,11 +45,12 @@ else:
             st.write("# Answer")
             st.write(response.answer)
 
-            # Citations
-            st.write("# Citations")
-            for idx, row in enumerate(response.citations):
-                st.write(f"**[{idx}] {result['context'][row.source_id].metadata['FILE']}**")
-                st.write(f'*"{row.quote}"*')
+            if response.citations:
+                # Citations
+                st.write("# Citations")
+                for idx, row in enumerate(response.citations):
+                    st.write(f"**[{idx}] {result['context'][row.source_id].metadata['FILE']}**")
+                    st.write(f'*"{row.quote}"*')
 
         # Graphical representation
         graph_messages = [
