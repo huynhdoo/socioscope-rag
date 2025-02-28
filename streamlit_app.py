@@ -52,33 +52,33 @@ else:
                     st.write(f"**[{idx}] {result['context'][row.source_id].metadata['FILE']}**")
                     st.write(f'*"{row.quote}"*')
 
-        # Graphical representation
-        graph_messages = [
-            {
-                "role": "system",
-                "content": (
-                    "1. Encode the user response in a mermaid graph"
-                    "2. Use the 'mermaid_url' tool"
+                # Graphical representation
+                graph_messages = [
+                    {
+                        "role": "system",
+                        "content": (
+                            "1. Encode the user response in a mermaid graph"
+                            "2. Use the 'mermaid_url' tool"
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"{response.answer}"
+                        ),
+                    }
+                ]
+
+                graph_response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=graph_messages,
+                    tools=tools_list,
                 )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"{response.answer}"
-                ),
-            }
-        ]
 
-        graph_response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=graph_messages,
-            tools=tools_list,
-        )
-
-        if graph_response.choices:
-            tool_call = graph_response.choices[0].message.tool_calls[0]
-            arguments = json.loads(tool_call.function.arguments)
-            graph = arguments.get('graph')
-            url = mermaid_url(graph)
-            st.write("\n\n# Graphical representation")
-            st.image(url+'?type=webp', use_container_width=True)
+                if graph_response.choices:
+                    tool_call = graph_response.choices[0].message.tool_calls[0]
+                    arguments = json.loads(tool_call.function.arguments)
+                    graph = arguments.get('graph')
+                    url = mermaid_url(graph)
+                    st.write("\n\n# Graphical representation")
+                    st.image(url+'?type=webp', use_container_width=True)
