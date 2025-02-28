@@ -17,3 +17,16 @@ A simple Streamlit app that answers questions about an uploaded document via Ope
    ```
    $ streamlit run streamlit_app.py
    ```
+
+3. Upload vector database (with git LFS)
+   ```
+   $ curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+   $ sudo apt-get install git-lfs
+   $ git lfs install
+   $ cd corpus
+   $ git lfs track "*.vdb"
+   $ git add .gitattributes
+   $ git add *.vdb
+   $ git commit -m "Add vector database"
+   $ git push origin main
+   ```
