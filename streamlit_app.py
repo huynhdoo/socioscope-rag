@@ -1,31 +1,14 @@
 import streamlit as st
 from openai import OpenAI
 from tools import mermaid_url, tools_list
+import vectordb, rag
 import json
 import pandas as pd
-
-# Load corpus
-CORPUS_PATH = './corpus/'
-CORPUS_FILE = CORPUS_PATH + "2025-02-25 SOCIOSCOPE CORPUS.json"
-
-with open(CORPUS_FILE, 'r') as f:
-    corpus = json.load(f)
-
-print(f"Loaded corpus: {len(corpus)} records.")
-
-# Transform as dataframe
-corpus_df = pd.DataFrame(corpus)
-metadatas_df = pd.json_normalize(corpus_df['metadata'])
-corpus_df = pd.concat([metadatas_df, corpus_df], axis=1)
-corpus_df = corpus_df.drop(columns=['metadata'])
-
-projects = corpus_df['PROJECT'].unique()
-print(f"Found {len(projects)} projects.")
 
 # Show title and description.
 st.title("📄 Socioscope Corpus RAG")
 st.write(
-    "Choose a project below and ask a question about it – GPT will answer! "
+    "Ask a question about the socioscope corpus – GPT4 will answer! "
     "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
 )
 
@@ -37,60 +20,38 @@ if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
 
 else:
+    # Load corpus
+    CORPUS_PATH = './corpus/'
+    CORPUS_VDB = CORPUS_PATH + "2025-02-28 SOCIOSCOPE.vdb"
+    db = vectordb.load_vectorstore(CORPUS_VDB, openai_api_key)
+    graph = rag.create_llm_graph(db, openai_api_key)
+
     # Create an OpenAI client.
     client = OpenAI(api_key=openai_api_key)
 
-    # Let the user upload a file via `st.file_uploader`.
-    #uploaded_file = st.file_uploader(
-    #    "Upload a document (.txt or .md)", type=("txt", "md")
-    #)
-
-    # Choose a project from an automatic list
-    options = st.multiselect('Select available projects:', projects)
-
     # Ask the user for a question via `st.text_area`.
     question = st.text_area(
-        "Now ask a question about the selected projects",
-        placeholder="Can you give me a short summary?",
-        disabled=(len(options)<1),
+        "Now ask a question about the socioscope projects",
+        placeholder="What is EDEN?",
+        # disabled=(len(options)<1),
     )
 
-    if options and question:
-        filter = corpus_df['PROJECT'].isin(options)
-        documents = corpus_df[filter][['PROJECT', 'content']]
-        print(f"Querying {len(documents)} documents.")
+    if question:
+        result = graph.invoke({"question":question})
+        response = result['answer']
 
-        # Process the chosen projects and question.
-        document = '\n\n'.join(documents['content'])
+        if response:
+            # Answer
+            st.write("# Answer")
+            st.write(response.answer)
 
-        stream_messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a helpful academic research assistant."
-                    "Given a user question and some project documents, answer the user question and cite the sources used."
-                    "If none of the documents answer the question, just say you don't know."
-                    f"\n\nHere are documents about {len(options)} different projects:" 
-                    f"{document} \n\n"
-                    # "Encode your response in a mermaid graph and use the 'mermaid_url' tool when user ask for a graph"
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"{question}"
-                ),
-            }
-        ]
+            # Citations
+            st.write("# Citations")
+            for idx, row in enumerate(response.citations):
+                st.write(f"**[{idx}] {result['context'][row.source_id].metadata['FILE']}**")
+                st.write(f'*"{row.quote}"*')
 
-        # Generate an answer using the OpenAI API.
-        stream_response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=stream_messages,
-            # tools=tools_list,
-            stream=True,
-        )
-        response = st.write_stream(stream_response)
+        # Graphical representation
         graph_messages = [
             {
                 "role": "system",
@@ -102,7 +63,7 @@ else:
             {
                 "role": "user",
                 "content": (
-                    f"{response}"
+                    f"{response.answer}"
                 ),
             }
         ]

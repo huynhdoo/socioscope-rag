@@ -1,3 +1,6 @@
 streamlit
 openai
 pandas
+langchain
+langgraph
+langchain-openai
